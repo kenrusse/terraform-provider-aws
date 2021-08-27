@@ -100,7 +100,7 @@ data "aws_ec2_transit_gateway_vpc_attachment" "test" {
 
 func testAccAWSEc2TransitGatewayVpcAttachmentDataSourceConfigID() string {
 	return testAccAvailableAZsNoOptInDefaultExcludeConfig() + `
-# IncorrectState: Transit Gateway is not available in availability zone usw2-az4	
+# IncorrectState: Transit Gateway is not available in availability zone usw2-az4
 
 resource "aws_vpc" "test" {
   cidr_block = "10.0.0.0/16"

@@ -1,67 +1,60 @@
 package aws
 
 import (
+	// "fmt"
 	"testing"
 
+	// "github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/service/ec2"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
+	// "github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
 )
 
-func TestAccAWSEc2TransitGatewayVpcAttachmentDataSource_Filter(t *testing.T) {
-	dataSourceName := "data.aws_ec2_transit_gateway_vpc_attachment.test"
-	resourceName := "aws_ec2_transit_gateway_vpc_attachment.test"
+func TestAccAWSEc2TransitGatewayConnectDataSource_Filter(t *testing.T) {
+	dataSourceName := "data.aws_ec2_transit_gateway_connect.test"
+	resourceName := "aws_ec2_transit_gateway_connect.test"
 
 	resource.ParallelTest(t, resource.TestCase{
 		PreCheck:     func() { testAccPreCheck(t); testAccPreCheckAWSEc2TransitGateway(t) },
 		ErrorCheck:   testAccErrorCheck(t, ec2.EndpointsID),
 		Providers:    testAccProviders,
-		CheckDestroy: testAccCheckAWSEc2TransitGatewayDestroy,
+		CheckDestroy: testAccCheckAWSEc2TransitGatewayConnectDestroy,
 		Steps: []resource.TestStep{
 			{
-				Config: testAccAWSEc2TransitGatewayVpcAttachmentDataSourceConfigFilter(),
+				Config: testAccAWSEc2TransitGatewayConnectDataSourceConfigFilter(),
 				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttrPair(resourceName, "appliance_mode_support", dataSourceName, "appliance_mode_support"),
-					resource.TestCheckResourceAttrPair(resourceName, "dns_support", dataSourceName, "dns_support"),
-					resource.TestCheckResourceAttrPair(resourceName, "ipv6_support", dataSourceName, "ipv6_support"),
-					resource.TestCheckResourceAttrPair(resourceName, "subnet_ids.#", dataSourceName, "subnet_ids.#"),
+					resource.TestCheckResourceAttrPair(resourceName, "protocol", dataSourceName, "protocol"),
 					resource.TestCheckResourceAttrPair(resourceName, "tags.%", dataSourceName, "tags.%"),
-					resource.TestCheckResourceAttrPair(resourceName, "transit_gateway_id", dataSourceName, "transit_gateway_id"),
-					resource.TestCheckResourceAttrPair(resourceName, "vpc_id", dataSourceName, "vpc_id"),
-					resource.TestCheckResourceAttrPair(resourceName, "vpc_owner_id", dataSourceName, "vpc_owner_id"),
+					resource.TestCheckResourceAttrPair(resourceName, "transport_transit_gateway_attachment_id", dataSourceName, "transport_transit_gateway_attachment_id"),
 				),
 			},
 		},
 	})
 }
 
-func TestAccAWSEc2TransitGatewayVpcAttachmentDataSource_ID(t *testing.T) {
-	dataSourceName := "data.aws_ec2_transit_gateway_vpc_attachment.test"
-	resourceName := "aws_ec2_transit_gateway_vpc_attachment.test"
+func TestAccAWSEc2TransitGatewayConnectDataSource_ID(t *testing.T) {
+	dataSourceName := "data.aws_ec2_transit_gateway_connect.test"
+	resourceName := "aws_ec2_transit_gateway_connect.test"
 
 	resource.ParallelTest(t, resource.TestCase{
 		PreCheck:     func() { testAccPreCheck(t); testAccPreCheckAWSEc2TransitGateway(t) },
 		ErrorCheck:   testAccErrorCheck(t, ec2.EndpointsID),
 		Providers:    testAccProviders,
-		CheckDestroy: testAccCheckAWSEc2TransitGatewayDestroy,
+		CheckDestroy: testAccCheckAWSEc2TransitGatewayConnectDestroy,
 		Steps: []resource.TestStep{
 			{
-				Config: testAccAWSEc2TransitGatewayVpcAttachmentDataSourceConfigID(),
+				Config: testAccAWSEc2TransitGatewayConnectDataSourceConfigID(),
 				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttrPair(resourceName, "appliance_mode_support", dataSourceName, "appliance_mode_support"),
-					resource.TestCheckResourceAttrPair(resourceName, "dns_support", dataSourceName, "dns_support"),
-					resource.TestCheckResourceAttrPair(resourceName, "ipv6_support", dataSourceName, "ipv6_support"),
-					resource.TestCheckResourceAttrPair(resourceName, "subnet_ids.#", dataSourceName, "subnet_ids.#"),
+					resource.TestCheckResourceAttrPair(resourceName, "protocol", dataSourceName, "protocol"),
 					resource.TestCheckResourceAttrPair(resourceName, "tags.%", dataSourceName, "tags.%"),
-					resource.TestCheckResourceAttrPair(resourceName, "transit_gateway_id", dataSourceName, "transit_gateway_id"),
-					resource.TestCheckResourceAttrPair(resourceName, "vpc_id", dataSourceName, "vpc_id"),
-					resource.TestCheckResourceAttrPair(resourceName, "vpc_owner_id", dataSourceName, "vpc_owner_id"),
+					resource.TestCheckResourceAttrPair(resourceName, "transport_transit_gateway_attachment_id", dataSourceName, "transport_transit_gateway_attachment_id"),
 				),
 			},
 		},
 	})
 }
 
-func testAccAWSEc2TransitGatewayVpcAttachmentDataSourceConfigFilter() string {
+func testAccAWSEc2TransitGatewayConnectDataSourceConfigFilter() string {
 	return testAccAvailableAZsNoOptInDefaultExcludeConfig() + `
 resource "aws_vpc" "test" {
   cidr_block = "10.0.0.0/16"
@@ -89,18 +82,22 @@ resource "aws_ec2_transit_gateway_vpc_attachment" "test" {
   vpc_id             = aws_vpc.test.id
 }
 
-data "aws_ec2_transit_gateway_vpc_attachment" "test" {
+resource "aws_ec2_transit_gateway_connect" "test" {
+  protocol = "gre"
+  transport_transit_gateway_attachment_id = aws_ec2_transit_gateway_vpc_attachment.test.id
+}
+
+data "aws_ec2_transit_gateway_connect" "test" {
   filter {
     name   = "transit-gateway-attachment-id"
-    values = [aws_ec2_transit_gateway_vpc_attachment.test.id]
+    values = [aws_ec2_transit_gateway_connect.test.id]
   }
 }
 `
 }
 
-func testAccAWSEc2TransitGatewayVpcAttachmentDataSourceConfigID() string {
+func testAccAWSEc2TransitGatewayConnectDataSourceConfigID() string {
 	return testAccAvailableAZsNoOptInDefaultExcludeConfig() + `
-# IncorrectState: Transit Gateway is not available in availability zone usw2-az4
 
 resource "aws_vpc" "test" {
   cidr_block = "10.0.0.0/16"
@@ -128,8 +125,43 @@ resource "aws_ec2_transit_gateway_vpc_attachment" "test" {
   vpc_id             = aws_vpc.test.id
 }
 
-data "aws_ec2_transit_gateway_vpc_attachment" "test" {
-  id = aws_ec2_transit_gateway_vpc_attachment.test.id
+resource "aws_ec2_transit_gateway_connect" "test" {
+  protocol = "gre"
+  transport_transit_gateway_attachment_id = aws_ec2_transit_gateway_vpc_attachment.test.id
+}
+
+data "aws_ec2_transit_gateway_connect" "test" {
+  id = aws_ec2_transit_gateway_connect.test.id
 }
 `
 }
+
+// func testAccCheckAWSEc2TransitGatewayConnectDestroy(s *terraform.State) error {
+// 	conn := testAccProvider.Meta().(*AWSClient).ec2conn
+//
+// 	for _, rs := range s.RootModule().Resources {
+// 		if rs.Type != "aws_ec2_transit_gateway_connect" {
+// 			continue
+// 		}
+//
+// 		transitGatewayConnect, err := ec2DescribeTransitGatewayConnect(conn, rs.Primary.ID)
+//
+// 		if isAWSErr(err, "InvalidTransitGatewayConnectID.NotFound", "") {
+// 			continue
+// 		}
+//
+// 		if err != nil {
+// 			return err
+// 		}
+//
+// 		if transitGatewayConnect == nil {
+// 			continue
+// 		}
+//
+// 		if aws.StringValue(transitGatewayConnect.State) != ec2.TransitGatewayAttachmentStateDeleted {
+// 			return fmt.Errorf("EC2 Transit Gateway Connect (%s) still exists in non-deleted (%s) state", rs.Primary.ID, aws.StringValue(transitGatewayConnect.State))
+// 		}
+// 	}
+//
+// 	return nil
+// }
